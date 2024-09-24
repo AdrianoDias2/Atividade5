@@ -1,120 +1,112 @@
+#include "grafo.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "grafo.h"
-#include <limits.h>
+#include <stdbool.h>
 
 void inicializaGrafoMatriz(GrafoMatriz* g, int n_vertices) {
     g->n_vertices = n_vertices;
-    for (int i = 0; i < n_vertices; i++)
-        for (int j = 0; j < n_vertices; j++)
+    for (int i = 0; i < n_vertices; i++) {
+        for (int j = 0; j < n_vertices; j++) {
             g->adj[i][j] = 0;
+        }
+    }
 }
 
 void inicializaGrafoLista(GrafoLista* g, int n_vertices) {
     g->n_vertices = n_vertices;
-    for (int i = 0; i < n_vertices; i++)
-        g->lista[i] = NULL;
-}
-
-void adicionaArestaMatriz(GrafoMatriz* g, int origem, int destino) {
-    g->adj[origem][destino] = 1;
-    g->adj[destino][origem] = 1; // Para grafos não direcionados
+    for (int i = 0; i < n_vertices; i++) {
+        g->adj[i] = NULL;
+    }
 }
 
 void adicionaArestaLista(GrafoLista* g, int origem, int destino) {
     No* novoNo = (No*)malloc(sizeof(No));
     novoNo->vertice = destino;
-    novoNo->prox = g->lista[origem];
-    g->lista[origem] = novoNo;
-
-    novoNo = (No*)malloc(sizeof(No));
-    novoNo->vertice = origem;
-    novoNo->prox = g->lista[destino];
-    g->lista[destino] = novoNo;
+    novoNo->prox = g->adj[origem];
+    g->adj[origem] = novoNo;
 }
 
-void carregarGrafo(const char* arquivo, GrafoMatriz* gM, GrafoLista* gL) {
+void carregarGrafoMatrizAdjacencia(const char* arquivo, GrafoMatriz* gM) {
     FILE* fp = fopen(arquivo, "r");
     if (fp == NULL) {
         printf("Erro ao abrir o arquivo.\n");
         return;
     }
 
-    int n_vertices, origem, destino;
-    fscanf(fp, "%d", &n_vertices);
+    int n_vertices;
+    fscanf(fp, "%d", &n_vertices);  // Lê o número de vértices
 
-    inicializaGrafoMatriz(gM, n_vertices);
-    inicializaGrafoLista(gL, n_vertices);
+    inicializaGrafoMatriz(gM, n_vertices);  // Inicializa a matriz de adjacência
 
-    while (fscanf(fp, "%d %d", &origem, &destino) != EOF) {
-        adicionaArestaMatriz(gM, origem, destino);
-        adicionaArestaLista(gL, origem, destino);
+    // Lê a matriz de adjacência do arquivo
+    for (int i = 0; i < n_vertices; i++) {
+        for (int j = 0; j < n_vertices; j++) {
+            fscanf(fp, "%d", &(gM->adj[i][j]));
+        }
     }
 
     fclose(fp);
 }
 
-void BFS(GrafoLista* g, int s, int t) {
-    int visitado[MAX_VERTICES] = {0};
-    int distancia[MAX_VERTICES], predecessores[MAX_VERTICES];
-    for (int i = 0; i < g->n_vertices; i++) {
-        distancia[i] = INT_MAX;
-        predecessores[i] = -1;
-    }
+void BFS(GrafoLista* g, int vertice_inicial, int vertice_final) {
+    bool visitado[MAX_VERTICES] = {false};
+    int fila[MAX_VERTICES];
+    int caminho[MAX_VERTICES];
+    int frente = 0, traseira = 0;
     
-    int fila[MAX_VERTICES], inicio = 0, fim = 0;
-    fila[fim++] = s;
-    visitado[s] = 1;
-    distancia[s] = 0;
+    visitado[vertice_inicial] = true;
+    fila[traseira++] = vertice_inicial;
+    caminho[vertice_inicial] = -1;
 
-    while (inicio < fim) {
-        int v = fila[inicio++];
-        No* adj = g->lista[v];
+    while (frente < traseira) {
+        int vertice = fila[frente++];
 
-        while (adj) {
-            int u = adj->vertice;
-            if (!visitado[u]) {
-                visitado[u] = 1;
-                distancia[u] = distancia[v] + 1;
-                predecessores[u] = v;
-                fila[fim++] = u;
-
-                if (u == t) {
-                    printf("Caminho: ");
-                    int temp = t;
-                    while (temp != -1) {
-                        printf("%d ", temp);
-                        temp = predecessores[temp];
+        No* temp = g->adj[vertice];
+        while (temp != NULL) {
+            int adj = temp->vertice;
+            if (!visitado[adj]) {
+                visitado[adj] = true;
+                caminho[adj] = vertice;
+                fila[traseira++] = adj;
+                if (adj == vertice_final) {
+                    int atual = vertice_final;
+                    printf("Caminho BFS: ");
+                    while (atual != -1) {
+                        printf("%d ", atual);
+                        atual = caminho[atual];
                     }
                     printf("\n");
                     return;
                 }
             }
-            adj = adj->prox;
+            temp = temp->prox;
         }
     }
-    printf("Nao ha caminho entre %d e %d\n", s, t);
+    printf("Nao ha caminho entre os vertices %d e %d\n", vertice_inicial, vertice_final);
 }
 
-void DFSIterativo(GrafoLista* g, int s) {
-    int visitado[MAX_VERTICES] = {0};
-    int pilha[MAX_VERTICES], topo = -1;
-
-    pilha[++topo] = s;
+void DFSIterativo(GrafoLista* g, int vertice_inicial) {
+    bool visitado[MAX_VERTICES] = {false};
+    int pilha[MAX_VERTICES];
+    int topo = -1;
+    
+    pilha[++topo] = vertice_inicial;
 
     while (topo >= 0) {
-        int v = pilha[topo--];
-        if (!visitado[v]) {
-            visitado[v] = 1;
-            printf("%d ", v);
+        int vertice = pilha[topo--];
+
+        if (!visitado[vertice]) {
+            printf("%d ", vertice);
+            visitado[vertice] = true;
         }
 
-        No* adj = g->lista[v];
-        while (adj) {
-            if (!visitado[adj->vertice]) {
-                pilha[++topo] = adj->vertice;
+        No* temp = g->adj[vertice];
+        while (temp != NULL) {
+            int adj = temp->vertice;
+            if (!visitado[adj]) {
+                pilha[++topo] = adj;
             }
-            adj = adj->prox;
+            temp = temp->prox;
         }
     }
     printf("\n");

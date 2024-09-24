@@ -3,15 +3,18 @@
 
 int main() {
     GrafoMatriz gMatriz;
-    GrafoLista gLista;
-    
-    carregarGrafo("grafo.txt", &gMatriz, &gLista);
 
-    printf("BFS entre vertices 0 e 3:\n");
-    BFS(&gLista, 0, 3);
+    // Carregar o grafo a partir do arquivo que contém a matriz de adjacência
+    carregarGrafoMatrizAdjacencia("grafo.txt", &gMatriz);
 
-    printf("\nDFS iterativo a partir do vertice 0:\n");
-    DFSIterativo(&gLista, 0);
+    // Exemplo de como acessar e usar a matriz de adjacência
+    printf("Matriz de adjacencia carregada:\n");
+    for (int i = 0; i < gMatriz.n_vertices; i++) {
+        for (int j = 0; j < gMatriz.n_vertices; j++) {
+            printf("%d ", gMatriz.adj[i][j]);
+        }
+        printf("\n");
+    }
 
     return 0;
 }
