@@ -16,7 +16,7 @@ void listarArquivos(char* caminho) {
         }
         closedir(dir);
     } else {
-        perror("Erro ao abrir o diretório");
+        perror("Erro ao abrir o diretorio");
     }
 }
 
