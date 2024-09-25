@@ -1,10 +1,14 @@
+# Makefile
+
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall
+TARGET = grafo
+OBJS = main.o grafo.o
 
-all: main
+all: $(TARGET)
 
-main: main.o grafo.o
-	$(CC) $(CFLAGS) -o main main.o grafo.o
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
 
 main.o: main.c grafo.h
 	$(CC) $(CFLAGS) -c main.c
@@ -13,4 +17,4 @@ grafo.o: grafo.c grafo.h
 	$(CC) $(CFLAGS) -c grafo.c
 
 clean:
-	rm -f *.o main
+	rm -f *.o $(TARGET)

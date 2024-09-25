@@ -1,112 +1,158 @@
-#include "grafo.h"
+// grafo.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "grafo.h"
 
-void inicializaGrafoMatriz(GrafoMatriz* g, int n_vertices) {
-    g->n_vertices = n_vertices;
-    for (int i = 0; i < n_vertices; i++) {
-        for (int j = 0; j < n_vertices; j++) {
-            g->adj[i][j] = 0;
-        }
-    }
+
+
+// Funções para Grafo usando Lista de Adjacência
+GrafoLista* criarGrafoLista(int vertices) {
+    GrafoLista* grafo = (GrafoLista*) malloc(sizeof(GrafoLista));
+    grafo->numVertices = vertices;
+    grafo->listaAdj = (No**) malloc(vertices * sizeof(No*));
+    for (int i = 0; i < vertices; i++)
+        grafo->listaAdj[i] = NULL;
+    return grafo;
 }
 
-void inicializaGrafoLista(GrafoLista* g, int n_vertices) {
-    g->n_vertices = n_vertices;
-    for (int i = 0; i < n_vertices; i++) {
-        g->adj[i] = NULL;
-    }
+No* criarNo(int vertice) {
+    No* novoNo = (No*) malloc(sizeof(No));
+    novoNo->vertice = vertice;
+    novoNo->proximo = NULL;
+    return novoNo;
 }
 
-void adicionaArestaLista(GrafoLista* g, int origem, int destino) {
-    No* novoNo = (No*)malloc(sizeof(No));
-    novoNo->vertice = destino;
-    novoNo->prox = g->adj[origem];
-    g->adj[origem] = novoNo;
+void adicionarArestaLista(GrafoLista* grafo, int origem, int destino) {
+    No* novoNo = criarNo(destino);
+    novoNo->proximo = grafo->listaAdj[origem];
+    grafo->listaAdj[origem] = novoNo;
+
+    novoNo = criarNo(origem);
+    novoNo->proximo = grafo->listaAdj[destino];
+    grafo->listaAdj[destino] = novoNo;
 }
 
-void carregarGrafoMatrizAdjacencia(const char* arquivo, GrafoMatriz* gM) {
-    FILE* fp = fopen(arquivo, "r");
-    if (fp == NULL) {
+// Funções para Grafo usando Matriz de Adjacência
+GrafoMatriz* criarGrafoMatriz(int vertices) {
+    GrafoMatriz* grafo = (GrafoMatriz*) malloc(sizeof(GrafoMatriz));
+    grafo->numVertices = vertices;
+    for (int i = 0; i < vertices; i++)
+        for (int j = 0; j < vertices; j++)
+            grafo->matrizAdj[i][j] = 0;
+    return grafo;
+}
+
+void adicionarArestaMatriz(GrafoMatriz* grafo, int origem, int destino) {
+    grafo->matrizAdj[origem][destino] = 1;
+    grafo->matrizAdj[destino][origem] = 1;
+}
+
+// Leitor de Arquivo
+// grafo.c
+#include <stdio.h>
+#include <stdlib.h>
+#include "grafo.h"
+
+// Função otimizada de leitura de arquivos para matriz de adjacência ponderada
+void lerArquivoGrafo(char* nomeArquivo, GrafoLista* grafoLista, GrafoMatriz* grafoMatriz) {
+    FILE* arquivo = fopen(nomeArquivo, "r");
+    if (!arquivo) {
         printf("Erro ao abrir o arquivo.\n");
         return;
     }
-
-    int n_vertices;
-    fscanf(fp, "%d", &n_vertices);  // Lê o número de vértices
-
-    inicializaGrafoMatriz(gM, n_vertices);  // Inicializa a matriz de adjacência
-
-    // Lê a matriz de adjacência do arquivo
-    for (int i = 0; i < n_vertices; i++) {
-        for (int j = 0; j < n_vertices; j++) {
-            fscanf(fp, "%d", &(gM->adj[i][j]));
-        }
-    }
-
-    fclose(fp);
-}
-
-void BFS(GrafoLista* g, int vertice_inicial, int vertice_final) {
-    bool visitado[MAX_VERTICES] = {false};
-    int fila[MAX_VERTICES];
-    int caminho[MAX_VERTICES];
-    int frente = 0, traseira = 0;
     
-    visitado[vertice_inicial] = true;
-    fila[traseira++] = vertice_inicial;
-    caminho[vertice_inicial] = -1;
+    int vertices;
+    fscanf(arquivo, "%d", &vertices);  // Lê o número de vértices
+    grafoLista->numVertices = vertices;
+    grafoMatriz->numVertices = vertices;
 
-    while (frente < traseira) {
-        int vertice = fila[frente++];
+    // Inicializa a estrutura da matriz de adjacência e da lista de adjacência
+    for (int i = 0; i < vertices; i++) {
+        for (int j = 0; j < vertices; j++) {
+            int peso;
+            fscanf(arquivo, "%d", &peso);  // Lê o peso da aresta entre i e j
 
-        No* temp = g->adj[vertice];
-        while (temp != NULL) {
-            int adj = temp->vertice;
-            if (!visitado[adj]) {
-                visitado[adj] = true;
-                caminho[adj] = vertice;
-                fila[traseira++] = adj;
-                if (adj == vertice_final) {
-                    int atual = vertice_final;
-                    printf("Caminho BFS: ");
-                    while (atual != -1) {
-                        printf("%d ", atual);
-                        atual = caminho[atual];
-                    }
-                    printf("\n");
-                    return;
+            if (peso != 0) {  // Se houver uma conexão (peso diferente de 0)
+                // Verificar se a aresta já foi adicionada em grafos não direcionados
+                if (grafoMatriz->matrizAdj[i][j] == 0) {
+                    adicionarArestaLista(grafoLista, i, j);  // Adiciona aresta na lista
+                    adicionarArestaMatriz(grafoMatriz, i, j);  // Adiciona aresta na matriz
                 }
             }
-            temp = temp->prox;
         }
     }
-    printf("Nao ha caminho entre os vertices %d e %d\n", vertice_inicial, vertice_final);
+
+    fclose(arquivo);
 }
 
-void DFSIterativo(GrafoLista* g, int vertice_inicial) {
+// Função de Busca em Largura (BFS)
+void buscaLargura(GrafoLista* grafo, int verticeInicial, int verticeFinal) {
     bool visitado[MAX_VERTICES] = {false};
-    int pilha[MAX_VERTICES];
-    int topo = -1;
-    
-    pilha[++topo] = vertice_inicial;
+    int fila[MAX_VERTICES], inicio = 0, fim = 0;
+    int pai[MAX_VERTICES];
 
-    while (topo >= 0) {
-        int vertice = pilha[topo--];
+    for (int i = 0; i < grafo->numVertices; i++)
+        pai[i] = -1;
 
-        if (!visitado[vertice]) {
-            printf("%d ", vertice);
-            visitado[vertice] = true;
+    visitado[verticeInicial] = true;
+    fila[fim++] = verticeInicial;
+
+    while (inicio != fim) {
+        int verticeAtual = fila[inicio++];
+        
+        if (verticeAtual == verticeFinal) {
+            int caminho[MAX_VERTICES], count = 0;
+            int percurso = verticeFinal;
+            while (percurso != -1) {
+                caminho[count++] = percurso;
+                percurso = pai[percurso];
+            }
+
+            printf("Caminho: ");
+            for (int i = count - 1; i >= 0; i--)
+                printf("%d ", caminho[i]);
+            printf("\n");
+            return;
         }
 
-        No* temp = g->adj[vertice];
-        while (temp != NULL) {
-            int adj = temp->vertice;
-            if (!visitado[adj]) {
-                pilha[++topo] = adj;
+        No* temp = grafo->listaAdj[verticeAtual];
+        while (temp) {
+            int verticeAdj = temp->vertice;
+
+            if (!visitado[verticeAdj]) {
+                visitado[verticeAdj] = true;
+                pai[verticeAdj] = verticeAtual;
+                fila[fim++] = verticeAdj;
             }
-            temp = temp->prox;
+            temp = temp->proximo;
+        }
+    }
+
+    printf("nao ha caminho entre os vertices.\n");
+}
+
+// Função de Busca em Profundidade (DFS) com Pilha
+void buscaProfundidade(GrafoLista* grafo, int verticeInicial) {
+    bool visitado[MAX_VERTICES] = {false};
+    int pilha[MAX_VERTICES], topo = -1;
+
+    pilha[++topo] = verticeInicial;
+
+    while (topo != -1) {
+        int verticeAtual = pilha[topo--];
+
+        if (!visitado[verticeAtual]) {
+            visitado[verticeAtual] = true;
+            printf("%d ", verticeAtual);
+        }
+
+        No* temp = grafo->listaAdj[verticeAtual];
+        while (temp) {
+            int verticeAdj = temp->vertice;
+            if (!visitado[verticeAdj])
+                pilha[++topo] = verticeAdj;
+            temp = temp->proximo;
         }
     }
     printf("\n");
