@@ -4,6 +4,7 @@
 #include "grafo.h"
 
 
+// Funções para Grafo usando Lista de Adjacência
 GrafoLista* criarGrafoLista(int vertices) {
     GrafoLista* grafo = (GrafoLista*) malloc(sizeof(GrafoLista));
     grafo->numVertices = vertices;
