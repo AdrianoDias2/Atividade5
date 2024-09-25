@@ -1,12 +1,9 @@
-// grafo.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include "grafo.h"
 
 
-
-// Funções para Grafo usando Lista de Adjacência
 GrafoLista* criarGrafoLista(int vertices) {
     GrafoLista* grafo = (GrafoLista*) malloc(sizeof(GrafoLista));
     grafo->numVertices = vertices;
@@ -48,11 +45,6 @@ void adicionarArestaMatriz(GrafoMatriz* grafo, int origem, int destino) {
     grafo->matrizAdj[destino][origem] = 1;
 }
 
-// Leitor de Arquivo
-// grafo.c
-#include <stdio.h>
-#include <stdlib.h>
-#include "grafo.h"
 
 // Função otimizada de leitura de arquivos para matriz de adjacência ponderada
 void lerArquivoGrafo(char* nomeArquivo, GrafoLista* grafoLista, GrafoMatriz* grafoMatriz) {

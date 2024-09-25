@@ -26,7 +26,7 @@ int main() {
     int vertices = 6;
     GrafoLista* grafoLista = criarGrafoLista(vertices);
     GrafoMatriz* grafoMatriz = criarGrafoMatriz(vertices);
-    printf("Escolha um arquivo de instância para carregar o grafo:\n");
+    printf("Escolha um arquivo de instancia para carregar o grafo:\n");
     listarArquivos(caminho);
     printf("Digite o nome do arquivo: ");
     scanf("%s", arquivoEscolhido);
